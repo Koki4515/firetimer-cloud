@@ -1,12 +1,17 @@
 {
   "name": "firetimer-cloud",
   "version": "1.0.0",
-  "description": "FireTimer cloud sync",
+  "description": "FireTimer Cloud API",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "engines": {
     "node": "18.x"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "better-sqlite3": "^9.4.0"
   }
 }
