@@ -1,82 +1,64 @@
 const express = require("express");
-const fs = require("fs");
+const cors = require("cors");
+const Database = require("better-sqlite3");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
-const DATA_FILE = "fire.json";
+const db = new Database("fires.db");
 
-/* ===== utils ===== */
-function load() {
-    if (!fs.existsSync(DATA_FILE)) return null;
-    return JSON.parse(fs.readFileSync(DATA_FILE));
+db.prepare(`
+CREATE TABLE IF NOT EXISTS fires (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  level INTEGER,
+  timestamp INTEGER
+)
+`).run();
+
+/* очистка старых пожаров */
+function cleanup() {
+  const now = Math.floor(Date.now() / 1000);
+  db.prepare(`
+    DELETE FROM fires
+    WHERE (level < 3 AND timestamp < ?)
+       OR (level = 3 AND timestamp < ?)
+  `).run(now - 3600, now - 8 * 3600);
 }
 
-function save(data) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-function isExpired(fire) {
-    const now = Math.floor(Date.now() / 1000);
-
-    if (fire.type === "normal") {
-        return (now - fire.timestamp) > 3600; // 1 час
-    }
-
-    if (fire.type === "lvl3") {
-        return (now - fire.timestamp) > 8 * 3600; // 8 часов
-    }
-
-    return true;
-}
-
-/* ===== routes ===== */
+/* добавить пожар */
 app.post("/fire", (req, res) => {
-    const { type, timestamp } = req.body;
-    if (!type || !timestamp) {
-        return res.json({ accepted: false });
-    }
+  const { level, timestamp } = req.body;
+  if (!level || !timestamp) return res.status(400).end();
 
-    const current = load();
+  cleanup();
 
-    // если есть актуальный пожар — не перезаписываем
-    if (current && !isExpired(current)) {
-        return res.json({
-            accepted: false,
-            type: current.type,
-            timestamp: current.timestamp
-        });
-    }
+  const last = db.prepare(
+    "SELECT timestamp FROM fires ORDER BY id DESC LIMIT 1"
+  ).get();
 
-    save({ type, timestamp });
+  // защита от дублей (30 секунд)
+  if (last && Math.abs(last.timestamp - timestamp) < 30) {
+    return res.json({ status: "duplicate" });
+  }
 
-    return res.json({
-        accepted: true,
-        type,
-        timestamp
-    });
+  db.prepare(
+    "INSERT INTO fires (level, timestamp) VALUES (?, ?)"
+  ).run(level, timestamp);
+
+  res.json({ status: "ok" });
 });
 
-app.get("/fires", (req, res) => {
-    const fire = load();
-
-    if (!fire) {
-        return res.json({ exists: false });
-    }
-
-    if (isExpired(fire)) {
-        fs.unlinkSync(DATA_FILE);
-        return res.json({ exists: false });
-    }
-
-    res.json({
-        exists: true,
-        type: fire.type,
-        timestamp: fire.timestamp
-    });
+/* получить последний пожар */
+app.get("/fire", (req, res) => {
+  cleanup();
+  const row = db.prepare(
+    "SELECT level, timestamp FROM fires ORDER BY id DESC LIMIT 1"
+  ).get();
+  res.json(row || {});
 });
 
-/* ===== start ===== */
-app.listen(process.env.PORT || 3000, () => {
-    console.log("🔥 FireTimer cloud running");
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log("FireTimer Cloud started on port", PORT);
 });
