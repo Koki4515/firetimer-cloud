@@ -1,59 +1,82 @@
-const express = require('express');
-const cors = require('cors');
-const Database = require('better-sqlite3');
+const express = require("express");
+const fs = require("fs");
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
-const db = new Database('fires.db');
+const DATA_FILE = "fire.json";
 
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS fires (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    server TEXT,
-    type TEXT,
-    time TEXT,
-    timestamp INTEGER
-  )
-`).run();
+/* ===== utils ===== */
+function load() {
+    if (!fs.existsSync(DATA_FILE)) return null;
+    return JSON.parse(fs.readFileSync(DATA_FILE));
+}
 
-// ➕ добавить пожар
-app.post('/fire', (req, res) => {
-  const { server, type, time, timestamp } = req.body;
-  if (!server || !type || !time || !timestamp) {
-    return res.status(400).json({ error: 'Bad data' });
-  }
+function save(data) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
 
-  db.prepare(
-    `INSERT INTO fires (server, type, time, timestamp)
-     VALUES (?, ?, ?, ?)`
-  ).run(server, type, time, timestamp);
+function isExpired(fire) {
+    const now = Math.floor(Date.now() / 1000);
 
-  res.json({ status: 'ok' });
+    if (fire.type === "normal") {
+        return (now - fire.timestamp) > 3600; // 1 час
+    }
+
+    if (fire.type === "lvl3") {
+        return (now - fire.timestamp) > 8 * 3600; // 8 часов
+    }
+
+    return true;
+}
+
+/* ===== routes ===== */
+app.post("/fire", (req, res) => {
+    const { type, timestamp } = req.body;
+    if (!type || !timestamp) {
+        return res.json({ accepted: false });
+    }
+
+    const current = load();
+
+    // если есть актуальный пожар — не перезаписываем
+    if (current && !isExpired(current)) {
+        return res.json({
+            accepted: false,
+            type: current.type,
+            timestamp: current.timestamp
+        });
+    }
+
+    save({ type, timestamp });
+
+    return res.json({
+        accepted: true,
+        type,
+        timestamp
+    });
 });
 
-// 📥 получить последние пожары
-app.get('/fires', (req, res) => {
-  const server = req.query.server;
-  if (!server) return res.status(400).json([]);
+app.get("/fires", (req, res) => {
+    const fire = load();
 
-  const rows = db.prepare(
-    `SELECT type, time FROM fires
-     WHERE server = ?
-     ORDER BY timestamp DESC
-     LIMIT 10`
-  ).all(server);
+    if (!fire) {
+        return res.json({ exists: false });
+    }
 
-  res.json(rows.reverse());
+    if (isExpired(fire)) {
+        fs.unlinkSync(DATA_FILE);
+        return res.json({ exists: false });
+    }
+
+    res.json({
+        exists: true,
+        type: fire.type,
+        timestamp: fire.timestamp
+    });
 });
 
-// 🩺 health check
-app.get('/', (_, res) => {
-  res.send('FireTimer Cloud is running');
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log('FireTimer Cloud started on port', PORT);
+/* ===== start ===== */
+app.listen(process.env.PORT || 3000, () => {
+    console.log("🔥 FireTimer cloud running");
 });
