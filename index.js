@@ -1,38 +1,44 @@
-const express = require("express");
-const app = express();
+const express = require("express")
+const fs = require("fs")
+const ini = require("ini")
 
-app.use(express.json());
+const app = express()
+const PORT = process.env.PORT || 3000
+const FILE = "./FireTimerCloud.ini"
 
-const fires = {}; 
-// fires[server] = { normal: timestamp, rank3: timestamp }
-
-app.post("/fire", (req, res) => {
-    const { server, type, timestamp } = req.body;
-
-    if (!server || !type || !timestamp) {
-        return res.status(400).json({ error: "bad_request" });
+if (!fs.existsSync(FILE)) {
+  fs.writeFileSync(FILE, ini.stringify({
+    fire: {
+      lastNormal: 0,
+      nextNormal: 0,
+      lastLvl3: 0,
+      nextLvl3: 0
     }
+  }))
+}
 
-    if (!fires[server]) {
-        fires[server] = { normal: null, rank3: null };
-    }
+app.get("/update", (req, res) => {
+  const level = req.query.level
+  const time = Number(req.query.time)
+  if (!time || !level) return res.send("BAD")
 
-    fires[server][type] = timestamp;
+  const data = ini.parse(fs.readFileSync(FILE, "utf-8"))
 
-    console.log("[FIRE]", server, type, timestamp);
-    res.json({ status: "ok" });
-});
+  if (level === "normal") {
+    data.fire.lastNormal = time
+    data.fire.nextNormal = time + 20*60
+  }
+  if (level === "level3") {
+    data.fire.lastLvl3 = time
+    data.fire.nextLvl3 = time + 3*60*60 + 20*60
+  }
 
-app.get("/fire", (req, res) => {
-    const server = req.query.server;
-    if (!server || !fires[server]) {
-        return res.json({ normal: null, rank3: null });
-    }
+  fs.writeFileSync(FILE, ini.stringify(data))
+  res.send("OK")
+})
 
-    res.json(fires[server]);
-});
+app.get("/FireTimerCloud.ini", (req, res) => {
+  res.sendFile(__dirname + "/FireTimerCloud.ini")
+})
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-    console.log("FireTimer cloud online on port", PORT);
-});
+app.listen(PORT, () => console.log("FireTimer Cloud running"))
