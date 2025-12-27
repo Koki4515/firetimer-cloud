@@ -1,14 +1,17 @@
-import express from "express";
+const express = require("express");
 const app = express();
 
 let lastFire = {};
 
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.post("/fire", (req, res) => {
     const { server, level, timestamp } = req.body;
+
     if (!server || !level || !timestamp) {
-        return res.status(400).send("Bad request");
+        console.log("❌ Bad request:", req.body);
+        return res.status(400).send("BAD_REQUEST");
     }
 
     lastFire[server] = {
@@ -16,13 +19,17 @@ app.post("/fire", (req, res) => {
         timestamp: Number(timestamp)
     };
 
-    console.log("🔥 Fire saved:", lastFire[server]);
+    console.log("🔥 Fire saved:", server, lastFire[server]);
     res.send("OK");
 });
 
 app.get("/fire", (req, res) => {
-    const fire = lastFire[req.query.server];
-    if (!fire) return res.status(404).send("NO_FIRE");
+    const server = req.query.server;
+    if (!server || !lastFire[server]) {
+        return res.status(404).send("NO_FIRE");
+    }
+
+    const fire = lastFire[server];
     res.send(`${fire.level};${fire.timestamp}`);
 });
 
