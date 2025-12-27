@@ -1,44 +1,59 @@
-const express = require("express")
-const fs = require("fs")
-const ini = require("ini")
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
 
-const app = express()
-const PORT = process.env.PORT || 3000
-const FILE = "./FireTimerCloud.ini"
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-if (!fs.existsSync(FILE)) {
-  fs.writeFileSync(FILE, ini.stringify({
-    fire: {
-      lastNormal: 0,
-      nextNormal: 0,
-      lastLvl3: 0,
-      nextLvl3: 0
+const FILE = path.join(__dirname, "FireTimerCloud.ini");
+
+let lastUpdate = 0;
+
+function ensureIni() {
+    if (!fs.existsSync(FILE)) {
+        fs.writeFileSync(FILE,
+`[fire]
+lastNormal=0
+nextNormal=0
+lastLvl3=0
+nextLvl3=0
+`);
     }
-  }))
 }
 
 app.get("/update", (req, res) => {
-  const level = req.query.level
-  const time = Number(req.query.time)
-  if (!time || !level) return res.send("BAD")
+    ensureIni();
 
-  const data = ini.parse(fs.readFileSync(FILE, "utf-8"))
+    const ln = Number(req.query.lastNormal || 0);
+    const nn = Number(req.query.nextNormal || 0);
+    const l3 = Number(req.query.lastLvl3 || 0);
+    const n3 = Number(req.query.nextLvl3 || 0);
 
-  if (level === "normal") {
-    data.fire.lastNormal = time
-    data.fire.nextNormal = time + 20*60
-  }
-  if (level === "level3") {
-    data.fire.lastLvl3 = time
-    data.fire.nextLvl3 = time + 3*60*60 + 20*60
-  }
+    const newest = Math.max(ln, l3);
 
-  fs.writeFileSync(FILE, ini.stringify(data))
-  res.send("OK")
-})
+    if (newest <= lastUpdate) {
+        return res.send("SKIP");
+    }
+
+    lastUpdate = newest;
+
+    const data =
+`[fire]
+lastNormal=${ln}
+nextNormal=${nn}
+lastLvl3=${l3}
+nextLvl3=${n3}
+`;
+
+    fs.writeFileSync(FILE, data, "utf8");
+    res.send("OK");
+});
 
 app.get("/FireTimerCloud.ini", (req, res) => {
-  res.sendFile(__dirname + "/FireTimerCloud.ini")
-})
+    ensureIni();
+    res.sendFile(FILE);
+});
 
-app.listen(PORT, () => console.log("FireTimer Cloud running"))
+app.listen(PORT, () => {
+    console.log("FireTimer Cloud started on port", PORT);
+});
