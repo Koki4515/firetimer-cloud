@@ -1,39 +1,38 @@
 const express = require("express");
 const app = express();
 
-let lastFire = {};
-
-app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.post("/fire", (req, res) => {
-    const { server, level, timestamp } = req.body;
+const fires = {}; 
+// fires[server] = { normal: timestamp, rank3: timestamp }
 
-    if (!server || !level || !timestamp) {
-        console.log("❌ Bad request:", req.body);
-        return res.status(400).send("BAD_REQUEST");
+app.post("/fire", (req, res) => {
+    const { server, type, timestamp } = req.body;
+
+    if (!server || !type || !timestamp) {
+        return res.status(400).json({ error: "bad_request" });
     }
 
-    lastFire[server] = {
-        level: Number(level),
-        timestamp: Number(timestamp)
-    };
+    if (!fires[server]) {
+        fires[server] = { normal: null, rank3: null };
+    }
 
-    console.log("🔥 Fire saved:", server, lastFire[server]);
-    res.send("OK");
+    fires[server][type] = timestamp;
+
+    console.log("[FIRE]", server, type, timestamp);
+    res.json({ status: "ok" });
 });
 
 app.get("/fire", (req, res) => {
     const server = req.query.server;
-    if (!server || !lastFire[server]) {
-        return res.status(404).send("NO_FIRE");
+    if (!server || !fires[server]) {
+        return res.json({ normal: null, rank3: null });
     }
 
-    const fire = lastFire[server];
-    res.send(`${fire.level};${fire.timestamp}`);
+    res.json(fires[server]);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-    console.log("🔥 FireTimer cloud online on port", PORT);
+    console.log("FireTimer cloud online on port", PORT);
 });
