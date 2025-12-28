@@ -1,56 +1,58 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const app = express();
 const bodyParser = require('body-parser');
 
-const app = express();
-const port = process.env.PORT || 3000; // Используем переменную окружения для порта или по умолчанию 3000
+// Получаем путь к рабочей директории
+const moonloaderDir = path.join(__dirname, 'moonloader', 'config');
 
-// Используем body-parser для обработки JSON и URL encoded данных
-app.use(bodyParser.urlencoded({ extended: true }));
+// Убедимся, что путь к INI файлу корректен
+const cloudIniFilePath = path.join(moonloaderDir, 'FireTimerCloud.ini');
+
+// Настройка Express для работы с JSON
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Путь к INI файлу на сервере
-const cloudIniFilePath = path.join(__dirname, 'FireTimerCloud.ini');
-
-// Загружаем файл INI
-app.get('/download_ini', (req, res) => {
-    fs.readFile(cloudIniFilePath, 'utf8', (err, data) => {
-        if (err) {
-            return res.status(500).send('Error reading INI file');  // Сообщение на английском
-        }
-        res.setHeader('Content-Type', 'application/octet-stream');
-        res.send(data); // Отправляем INI файл обратно клиенту
-    });
+// Запуск сервера
+app.listen(10000, () => {
+    console.log('Server is running on port 10000');
 });
 
-// Загружаем данные из файла INI и отправляем их в ответ
+// Обработка POST запроса на загрузку INI
 app.post('/upload_ini', (req, res) => {
-    console.log('Received POST data:', req.body);  // Логируем полученные данные
-
     const fireData = req.body;
+    console.log('Received POST data:', fireData);
 
+    // Проверка на наличие данных
     if (!fireData.lastNormal || !fireData.nextNormal || !fireData.lastLvl3 || !fireData.nextLvl3) {
-        return res.status(400).send('Invalid data received');
+        return res.status(400).send('Invalid data: Missing required fields');
     }
 
-    // Формируем данные для INI файла
+    // Формирование содержимого INI файла
     const iniContent = `[FireData]
 lastNormal=${fireData.lastNormal}
 nextNormal=${fireData.nextNormal}
 lastLvl3=${fireData.lastLvl3}
-nextLvl3=${fireData.nextLvl3}
-`;
+nextLvl3=${fireData.nextLvl3}`;
 
+    // Запись данных в INI файл
     fs.writeFile(cloudIniFilePath, iniContent, (err) => {
         if (err) {
-            return res.status(500).send('Error writing to INI file');
+            console.error('Error saving data to INI:', err);
+            return res.status(500).send('Error saving data to INI');
         }
         res.send('Data successfully saved to cloud');
     });
 });
 
-// Запуск сервера
-app.listen(port, () => {
-    console.log(`Server is running on port 10000`);
+// Обработка запроса на скачивание INI
+app.get('/download_ini', (req, res) => {
+    fs.readFile(cloudIniFilePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading INI file:', err);
+            return res.status(500).send('Error reading INI file');
+        }
+        res.send(data);  // Отправляем содержимое INI файла обратно
+    });
 });
