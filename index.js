@@ -5,8 +5,8 @@ const bodyParser = require('body-parser');
 const app = express();
 
 // Папка FireTimer рядом с FireTimer.lua
-const fireTimerDir = path.resolve('FireTimer');  // Папка FireTimer будет в корне проекта
-const cloudIniFilePath = path.join(fireTimerDir, 'FireTimerCloud.ini');  // Путь к файлу INI в папке FireTimer
+const fireTimerDir = path.resolve(__dirname, 'FireTimer'); // Папка FireTimer будет в корне проекта
+const cloudIniFilePath = path.join(fireTimerDir, 'FireTimerCloud.ini'); // Путь к файлу INI в папке FireTimer
 
 // Проверка и создание папки FireTimer, если её нет
 if (!fs.existsSync(fireTimerDir)) {
