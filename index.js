@@ -4,12 +4,12 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 
-// Используем переменную окружения для порта (это нужно для Render)
+// Порт для сервера
 const PORT = process.env.PORT || 10000;
 
 app.use(bodyParser.json());
 
-// Обработчик для скачивания файла с данными
+// Эндпоинт для скачивания данных
 app.get('/download_ini', (req, res) => {
     fs.readFile(path.join(__dirname, 'FireTimerCloud.ini'), 'utf8', (err, data) => {
         if (err) {
@@ -19,9 +19,9 @@ app.get('/download_ini', (req, res) => {
     });
 });
 
-// Обработчик для загрузки данных в файл
+// Эндпоинт для загрузки данных
 app.post('/upload_ini', (req, res) => {
-    const data = req.body; // Получаем данные из запроса
+    const data = req.body;
     fs.writeFile(path.join(__dirname, 'FireTimerCloud.ini'), JSON.stringify(data), 'utf8', (err) => {
         if (err) {
             return res.status(500).send('Ошибка записи в файл');
