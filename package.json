@@ -2,13 +2,13 @@
   "name": "firetimer-cloud",
   "version": "1.0.0",
   "description": "FireTimer cloud server",
-  "main": "server.js",
+  "main": "index.js",
   "dependencies": {
     "express": "^4.17.1",
     "body-parser": "^1.19.0"
   },
   "scripts": {
-    "start": "sh start.sh"
+    "start": "node index.js"
   },
   "author": "Koki Kayman",
   "license": "ISC"
