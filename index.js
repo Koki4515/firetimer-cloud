@@ -1,32 +1,42 @@
 const express = require('express');
-const app = express();
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 
-// Порт для сервера
+const app = express();
 const PORT = process.env.PORT || 10000;
 
-app.use(bodyParser.json());
+app.use(bodyParser.json());  // Для парсинга JSON в теле запроса
 
-// Эндпоинт для скачивания данных
-app.get('/download_ini', (req, res) => {
-    fs.readFile(path.join(__dirname, 'FireTimerCloud.ini'), 'utf8', (err, data) => {
+// Обработчик для загрузки данных в файл
+app.post('/upload_ini', (req, res) => {
+    const data = req.body;
+    console.log('Полученные данные:', data);  // Логируем полученные данные
+
+    const filePath = path.join(__dirname, 'FireTimerCloud.ini');
+    
+    fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8', (err) => {
         if (err) {
-            return res.status(500).send('Ошибка чтения файла');
+            console.error('Ошибка записи в файл:', err);
+            return res.status(500).send('Ошибка записи в файл');
         }
-        res.json(JSON.parse(data));  // Отправляем данные клиенту
+
+        console.log('Данные успешно сохранены в FireTimerCloud.ini');
+        res.status(200).send('Данные успешно загружены');
     });
 });
 
-// Эндпоинт для загрузки данных
-app.post('/upload_ini', (req, res) => {
-    const data = req.body;
-    fs.writeFile(path.join(__dirname, 'FireTimerCloud.ini'), JSON.stringify(data), 'utf8', (err) => {
+// Обработчик для получения данных из файла (GET запрос)
+app.get('/download_ini', (req, res) => {
+    const filePath = path.join(__dirname, 'FireTimerCloud.ini');
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            return res.status(500).send('Ошибка записи в файл');
+            console.error('Ошибка чтения файла:', err);
+            return res.status(500).send('Ошибка чтения файла');
         }
-        res.status(200).send('Данные успешно загружены');
+
+        res.json(JSON.parse(data));
     });
 });
 
