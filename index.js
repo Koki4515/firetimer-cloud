@@ -2,12 +2,12 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const app = express();
-const port = process.env.PORT || 10000;  // Убедись, что порт корректно задан
+const port = process.env.PORT || 10000;
 
 app.use(express.json());  // Для парсинга JSON в теле запроса
 
-// Папка для хранения файлов
-const FIRE_TIMER_DIR = path.join(__dirname, 'FireTimer');  // Локальный путь к папке FireTimer
+// Папка для хранения файлов FireTimer на сервере
+const FIRE_TIMER_DIR = path.join(__dirname, 'FireTimer');  // Локальный путь к папке FireTimer на сервере
 
 // Проверка и создание папки FireTimer
 const createFireTimerFolder = () => {
@@ -17,7 +17,7 @@ const createFireTimerFolder = () => {
     }
 };
 
-// Загружаем данные INI
+// Загружаем данные из FireTimerCloud.ini
 const loadFireTimerData = () => {
     const filePath = path.join(FIRE_TIMER_DIR, 'FireTimerCloud.ini');
     if (fs.existsSync(filePath)) {
@@ -34,7 +34,7 @@ const loadFireTimerData = () => {
     };
 };
 
-// Сохраняем данные INI
+// Сохраняем данные в FireTimerCloud.ini
 const saveFireTimerData = (data) => {
     const filePath = path.join(FIRE_TIMER_DIR, 'FireTimerCloud.ini');
     fs.writeFileSync(filePath, JSON.stringify(data, null, 4));  // Записываем данные в форматированный JSON
@@ -51,7 +51,7 @@ app.get('/download_ini', (req, res) => {
 app.post('/upload_ini', express.json(), (req, res) => {
     createFireTimerFolder();  // Проверяем, что папка существует
     const fireTimerData = req.body;
-    saveFireTimerData(fireTimerData);  // Сохраняем обновленные данные
+    saveFireTimerData(fireTimerData);  // Сохраняем обновленные данные в FireTimerCloud.ini
     res.send('Данные успешно обновлены.');
 });
 
