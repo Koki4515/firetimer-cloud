@@ -2,67 +2,42 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
-const axios = require('axios'); // Для HTTP запросов
-
 const app = express();
-const port = process.env.PORT || 10000;  
+const port = process.env.PORT || 10000;
 
-const fireTimerDir = path.join(__dirname, '../FireTimer'); 
-const cloudFilePath = path.join(fireTimerDir, 'FireTimerCloud.ini');  
+const fireTimerDir = path.join(__dirname, '..', 'FireTimer');
+const cloudIniPath = path.join(fireTimerDir, 'FireTimerCloud.ini');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.get('/download_ini', (req, res) => {
-
-    if (fs.existsSync(cloudFilePath)) {
+    fs.readFile(cloudIniPath, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).send('Error reading INI file');
+        }
         res.setHeader('Content-Type', 'application/octet-stream');
-        res.sendFile(cloudFilePath); 
-    } else {
-        res.status(404).send('INI file not found in FireTimer directory');
-    }
+        res.send(data);
+    });
 });
 
 app.post('/upload_ini', (req, res) => {
-    const data = req.body;
+    const { lastNormal, nextNormal, lastLvl3, nextLvl3 } = req.body;
 
-    if (!data) {
-        return res.status(400).send('No data received');
+    if (!lastNormal || !nextNormal || !lastLvl3 || !nextLvl3) {
+        return res.status(400).send('Missing data');
     }
 
-    try {
-        fs.writeFileSync(cloudFilePath, data, 'utf8'); 
-        res.status(200).send('Data successfully saved to cloud');
-    } catch (err) {
-        console.error('Error writing INI file:', err);
-        res.status(500).send('Error saving data');
-    }
-});
+    const fireData = `lastNormal=${lastNormal}\nnextNormal=${nextNormal}\nlastLvl3=${lastLvl3}\nnextLvl3=${nextLvl3}\n`;
 
-app.post('/upload_ini', (req, res) => {
-    try {
-        const iniData = fs.readFileSync(cloudFilePath, 'utf8');  
-        console.log("INI data to upload: ", iniData);
-
-        axios.post('https://firetimer-cloud-1.onrender.com/upload_ini', iniData, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }
-        })
-        .then(response => {
-            console.log("Data uploaded successfully!");
-            res.send(response.data);
-        })
-        .catch(error => {
-            console.error("Error while uploading data: ", error);
-            res.status(500).send('Error uploading data');
-        });
-    } catch (err) {
-        console.error('Error reading INI file: ', err);
-        res.status(500).send('Error reading INI file');
-    }
+    fs.writeFile(cloudIniPath, fireData, 'utf8', (err) => {
+        if (err) {
+            return res.status(500).send('Error writing INI file');
+        }
+        res.status(200).send('Data saved to cloud');
+    });
 });
 
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server running on port ${port}`);
 });
