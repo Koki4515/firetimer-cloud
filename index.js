@@ -26,13 +26,15 @@ app.get('/download_ini', (req, res) => {
 
 // Загружаем данные из файла INI и отправляем их в ответ
 app.post('/upload_ini', (req, res) => {
+    console.log('Received POST data:', req.body);  // Логируем полученные данные
+
     const fireData = req.body;
 
     if (!fireData.lastNormal || !fireData.nextNormal || !fireData.lastLvl3 || !fireData.nextLvl3) {
-        return res.status(400).send('Invalid data received');  // Сообщение на английском
+        return res.status(400).send('Invalid data received');
     }
 
-    // Создаем или обновляем INI файл
+    // Формируем данные для INI файла
     const iniContent = `[FireData]
 lastNormal=${fireData.lastNormal}
 nextNormal=${fireData.nextNormal}
@@ -42,9 +44,9 @@ nextLvl3=${fireData.nextLvl3}
 
     fs.writeFile(cloudIniFilePath, iniContent, (err) => {
         if (err) {
-            return res.status(500).send('Error writing to INI file');  // Сообщение на английском
+            return res.status(500).send('Error writing to INI file');
         }
-        res.send('Data successfully saved to cloud');  // Сообщение на английском
+        res.send('Data successfully saved to cloud');
     });
 });
 
