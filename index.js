@@ -22,7 +22,7 @@ const loadFireTimerData = () => {
     const filePath = path.join(FIRE_TIMER_DIR, 'FireTimerCloud.ini');
     if (fs.existsSync(filePath)) {
         const data = fs.readFileSync(filePath, 'utf-8');
-        return JSON.parse(data);
+        return JSON.parse(data);  // Возвращаем данные, если файл существует
     }
     return {
         fire: {
@@ -43,15 +43,17 @@ const saveFireTimerData = (data) => {
 // Обработчик для получения данных с облака
 app.get('/download_ini', (req, res) => {
     createFireTimerFolder();  // Проверяем, что папка существует
-    const fireTimerData = loadFireTimerData();
-    res.json(fireTimerData);  // Возвращаем данные
+    const fireTimerData = loadFireTimerData();  // Загружаем данные из FireTimerCloud.ini
+    res.json(fireTimerData);  // Возвращаем данные в формате JSON
 });
 
 // Обработчик для загрузки данных в облако
 app.post('/upload_ini', express.json(), (req, res) => {
     createFireTimerFolder();  // Проверяем, что папка существует
-    const fireTimerData = req.body;
-    saveFireTimerData(fireTimerData);  // Сохраняем обновленные данные в FireTimerCloud.ini
+    const fireTimerData = req.body;  // Получаем данные из POST запроса
+
+    // Обновляем файл FireTimerCloud.ini новыми данными
+    saveFireTimerData(fireTimerData);
     res.send('Данные успешно обновлены.');
 });
 
