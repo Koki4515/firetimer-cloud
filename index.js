@@ -7,19 +7,20 @@ const port = process.env.PORT || 10000;
 app.use(express.json());  // Для парсинга JSON в теле запроса
 
 // Папка для хранения файлов FireTimer на сервере
-const FIRE_TIMER_DIR = path.join(__dirname, 'FireTimer');  // Локальный путь к папке FireTimer на сервере
+const BASE_DIR = path.join(__dirname, 'FireTimer');  // Основная папка на сервере
+const KOKI4_DIR = path.join(BASE_DIR, 'KOKI4');  // Папка KOKI4 на облаке
 
-// Проверка и создание папки FireTimer
-const createFireTimerFolder = () => {
-    if (!fs.existsSync(FIRE_TIMER_DIR)) {
-        fs.mkdirSync(FIRE_TIMER_DIR, { recursive: true });  // Создаем папку, если ее нет
-        console.log("Папка FireTimer была создана.");
+// Проверка и создание папки KOKI4
+const createKoki4Folder = () => {
+    if (!fs.existsSync(KOKI4_DIR)) {
+        fs.mkdirSync(KOKI4_DIR, { recursive: true });  // Создаем папку KOKI4, если её нет
+        console.log("Папка KOKI4 была создана.");
     }
 };
 
-// Загружаем данные из FireTimerCloud.ini
+// Загружаем данные из FireTimerCloud.ini на сервере
 const loadFireTimerData = () => {
-    const filePath = path.join(FIRE_TIMER_DIR, 'FireTimerCloud.ini');
+    const filePath = path.join(BASE_DIR, 'FireTimerCloud.ini');
     if (fs.existsSync(filePath)) {
         const data = fs.readFileSync(filePath, 'utf-8');
         return JSON.parse(data);  // Возвращаем данные, если файл существует
@@ -34,27 +35,28 @@ const loadFireTimerData = () => {
     };
 };
 
-// Сохраняем данные в FireTimerCloud.ini
-const saveFireTimerData = (data) => {
-    const filePath = path.join(FIRE_TIMER_DIR, 'FireTimerCloud.ini');
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 4));  // Записываем данные в форматированный JSON
+// Сохраняем данные в папку KOKI4
+const saveFireTimerDataToKoki4 = (data) => {
+    createKoki4Folder();  // Создаем папку KOKI4, если её нет
+    const filePath = path.join(KOKI4_DIR, 'FireTimerCloud.ini');
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 4));  // Записываем данные в JSON формат
 };
 
-// Обработчик для получения данных с облака
+// Обработчик для получения данных с облака (из KOKI4)
 app.get('/download_ini', (req, res) => {
-    createFireTimerFolder();  // Проверяем, что папка существует
-    const fireTimerData = loadFireTimerData();  // Загружаем данные из FireTimerCloud.ini
-    res.json(fireTimerData);  // Возвращаем данные в формате JSON
+    createKoki4Folder();  // Проверяем, что папка существует
+    const fireTimerData = loadFireTimerData();  // Загружаем данные из FireTimerCloud.ini на сервере
+    res.json(fireTimerData);  // Отправляем данные из папки KOKI4
 });
 
 // Обработчик для загрузки данных в облако
 app.post('/upload_ini', express.json(), (req, res) => {
-    createFireTimerFolder();  // Проверяем, что папка существует
+    createKoki4Folder();  // Проверяем, что папка существует
     const fireTimerData = req.body;  // Получаем данные из POST запроса
 
-    // Обновляем файл FireTimerCloud.ini новыми данными
-    saveFireTimerData(fireTimerData);
-    res.send('Данные успешно обновлены.');
+    // Сохраняем данные в папке KOKI4
+    saveFireTimerDataToKoki4(fireTimerData);
+    res.send('Данные успешно обновлены в облаке в папке KOKI4.');
 });
 
 // Запуск сервера
