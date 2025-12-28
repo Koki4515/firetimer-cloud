@@ -50,5 +50,5 @@ nextLvl3=${fireData.nextLvl3}
 
 // Запуск сервера
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server is running on port 10000`);
 });
