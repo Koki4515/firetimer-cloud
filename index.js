@@ -1,14 +1,17 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const app = express();
 const bodyParser = require('body-parser');
+const app = express();
 
-// Получаем путь к директории, где находится этот файл
-const moonloaderDir = path.join(__dirname, 'moonloader', 'config');  // Папка moonloader/config
+// Папка FireTimer рядом с FireTimer.lua
+const fireTimerDir = path.resolve('FireTimer');  // Папка FireTimer будет в корне проекта
+const cloudIniFilePath = path.join(fireTimerDir, 'FireTimerCloud.ini');  // Путь к файлу INI в папке FireTimer
 
-// Путь к INI файлу
-const cloudIniFilePath = path.join(moonloaderDir, 'FireTimerCloud.ini');
+// Проверка и создание папки FireTimer, если её нет
+if (!fs.existsSync(fireTimerDir)) {
+    fs.mkdirSync(fireTimerDir);  // Если папки нет — создаём её
+}
 
 // Настройка Express для работы с JSON
 app.use(bodyParser.json());
@@ -21,7 +24,7 @@ app.listen(10000, () => {
 
 // Обработка POST запроса на загрузку INI
 app.post('/upload_ini', (req, res) => {
-    const fireData = req.body;  // Данные, полученные от Lua скрипта
+    const fireData = req.body;
     console.log('Received POST data:', fireData);
 
     // Проверка на наличие данных
@@ -48,7 +51,6 @@ nextLvl3=${fireData.nextLvl3}`;
 
 // Обработка запроса на скачивание INI
 app.get('/download_ini', (req, res) => {
-    // Чтение содержимого INI файла
     fs.readFile(cloudIniFilePath, 'utf8', (err, data) => {
         if (err) {
             console.error('Error reading INI file:', err);
@@ -57,3 +59,5 @@ app.get('/download_ini', (req, res) => {
         res.send(data);  // Отправляем содержимое INI файла обратно клиенту
     });
 });
+
+console.log('Cloud server is running and waiting for incoming requests.');
