@@ -1,59 +1,54 @@
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000; // Используем переменную окружения для порта или по умолчанию 3000
 
-const FILE = path.join(__dirname, "FireTimerCloud.ini");
+// Используем body-parser для обработки JSON и URL encoded данных
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
-let lastUpdate = 0;
+// Путь к INI файлу на сервере
+const cloudIniFilePath = path.join(__dirname, 'FireTimerCloud.ini');
 
-function ensureIni() {
-    if (!fs.existsSync(FILE)) {
-        fs.writeFileSync(FILE,
-`[fire]
-lastNormal=0
-nextNormal=0
-lastLvl3=0
-nextLvl3=0
-`);
-    }
-}
+// Загружаем файл INI
+app.get('/download_ini', (req, res) => {
+    fs.readFile(cloudIniFilePath, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).send('Error reading INI file');  // Сообщение на английском
+        }
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.send(data); // Отправляем INI файл обратно клиенту
+    });
+});
 
-app.get("/update", (req, res) => {
-    ensureIni();
+// Загружаем данные из файла INI и отправляем их в ответ
+app.post('/upload_ini', (req, res) => {
+    const fireData = req.body;
 
-    const ln = Number(req.query.lastNormal || 0);
-    const nn = Number(req.query.nextNormal || 0);
-    const l3 = Number(req.query.lastLvl3 || 0);
-    const n3 = Number(req.query.nextLvl3 || 0);
-
-    const newest = Math.max(ln, l3);
-
-    if (newest <= lastUpdate) {
-        return res.send("SKIP");
+    if (!fireData.lastNormal || !fireData.nextNormal || !fireData.lastLvl3 || !fireData.nextLvl3) {
+        return res.status(400).send('Invalid data received');  // Сообщение на английском
     }
 
-    lastUpdate = newest;
-
-    const data =
-`[fire]
-lastNormal=${ln}
-nextNormal=${nn}
-lastLvl3=${l3}
-nextLvl3=${n3}
+    // Создаем или обновляем INI файл
+    const iniContent = `[FireData]
+lastNormal=${fireData.lastNormal}
+nextNormal=${fireData.nextNormal}
+lastLvl3=${fireData.lastLvl3}
+nextLvl3=${fireData.nextLvl3}
 `;
 
-    fs.writeFileSync(FILE, data, "utf8");
-    res.send("OK");
+    fs.writeFile(cloudIniFilePath, iniContent, (err) => {
+        if (err) {
+            return res.status(500).send('Error writing to INI file');  // Сообщение на английском
+        }
+        res.send('Data successfully saved to cloud');  // Сообщение на английском
+    });
 });
 
-app.get("/FireTimerCloud.ini", (req, res) => {
-    ensureIni();
-    res.sendFile(FILE);
-});
-
-app.listen(PORT, () => {
-    console.log("FireTimer Cloud started on port", PORT);
+// Запуск сервера
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
