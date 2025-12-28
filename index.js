@@ -4,10 +4,10 @@ const path = require('path');
 const app = express();
 const bodyParser = require('body-parser');
 
-// Получаем путь к рабочей директории
-const moonloaderDir = path.join(__dirname, 'moonloader', 'config');
+// Получаем путь к директории, где находится этот файл
+const moonloaderDir = path.join(__dirname, 'moonloader', 'config');  // Папка moonloader/config
 
-// Убедимся, что путь к INI файлу корректен
+// Путь к INI файлу
 const cloudIniFilePath = path.join(moonloaderDir, 'FireTimerCloud.ini');
 
 // Настройка Express для работы с JSON
@@ -21,7 +21,7 @@ app.listen(10000, () => {
 
 // Обработка POST запроса на загрузку INI
 app.post('/upload_ini', (req, res) => {
-    const fireData = req.body;
+    const fireData = req.body;  // Данные, полученные от Lua скрипта
     console.log('Received POST data:', fireData);
 
     // Проверка на наличие данных
@@ -48,11 +48,12 @@ nextLvl3=${fireData.nextLvl3}`;
 
 // Обработка запроса на скачивание INI
 app.get('/download_ini', (req, res) => {
+    // Чтение содержимого INI файла
     fs.readFile(cloudIniFilePath, 'utf8', (err, data) => {
         if (err) {
             console.error('Error reading INI file:', err);
             return res.status(500).send('Error reading INI file');
         }
-        res.send(data);  // Отправляем содержимое INI файла обратно
+        res.send(data);  // Отправляем содержимое INI файла обратно клиенту
     });
 });
