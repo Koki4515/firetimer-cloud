@@ -2,19 +2,19 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
-const axios = require('axios'); 
+const axios = require('axios'); // Для HTTP запросов
 
 const app = express();
 const port = process.env.PORT || 10000;  
 
-const fireTimerDir = path.join(__dirname, '../FireTimer');  
+const fireTimerDir = path.join(__dirname, '../FireTimer'); 
 const cloudFilePath = path.join(fireTimerDir, 'FireTimerCloud.ini');  
-
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.get('/download_ini', (req, res) => {
+
     if (fs.existsSync(cloudFilePath)) {
         res.setHeader('Content-Type', 'application/octet-stream');
         res.sendFile(cloudFilePath); 
@@ -31,7 +31,7 @@ app.post('/upload_ini', (req, res) => {
     }
 
     try {
-        fs.writeFileSync(cloudFilePath, data, 'utf8');  
+        fs.writeFileSync(cloudFilePath, data, 'utf8'); 
         res.status(200).send('Data successfully saved to cloud');
     } catch (err) {
         console.error('Error writing INI file:', err);
