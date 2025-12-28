@@ -8,7 +8,7 @@
     "body-parser": "^1.19.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "sh start.sh"
   },
   "author": "Koki Kayman",
   "license": "ISC"
