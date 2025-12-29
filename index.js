@@ -38,18 +38,17 @@ function loadDataFromServerFile() {
     }
 }
 
-// Функция для создания файла с дефолтными значениями
-function createDefaultFile() {
-    const defaultData = {
+// Функция для восстановления данных с последними значениями
+function restoreFileWithLatestData() {
+    const lastKnownData = {
         fire: {
-            nextLvl3: 0,
-            lastLvl3: 0,
-            lastNormal: 0,
-            nextNormal: 0
+            nextLvl3: 1767020648,
+            lastLvl3: 1767021848,
+            lastNormal: 1767020648,
+            nextNormal: 1767021848
         }
     };
-
-    saveDataToServerFile(defaultData);
+    saveDataToServerFile(lastKnownData);
 }
 
 // Эндпоинт для обработки загрузки данных в файл timer.ini
@@ -74,8 +73,8 @@ app.post('/upload_ini', (req, res) => {
 app.get('/download_ini', (req, res) => {
     // Проверяем, существует ли файл
     if (!fs.existsSync(SERVER_FILE_PATH)) {
-        console.log('Файл не найден, создаём файл с дефолтными значениями.');
-        createDefaultFile();
+        console.log('Файл не найден, восстанавливаем файл с последними значениями.');
+        restoreFileWithLatestData();  // Восстанавливаем файл с последними значениями
     }
 
     const data = loadDataFromServerFile();
