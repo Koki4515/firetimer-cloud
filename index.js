@@ -38,7 +38,7 @@ function loadDataFromServerFile() {
     }
 }
 
-// Обработчик для загрузки данных с клиента (из файла FireTimerCloud.ini) и сохранения в серверный файл timer.ini
+// Эндпоинт для обработки загрузки данных в файл timer.ini
 app.post('/upload_ini', (req, res) => {
     const data = req.body;
 
@@ -56,7 +56,7 @@ app.post('/upload_ini', (req, res) => {
     res.status(200).send('Данные успешно загружены в серверный файл timer.ini');
 });
 
-// Обработчик для получения данных с сервера (для запроса с локальной машины)
+// Эндпоинт для получения данных из файла timer.ini
 app.get('/download_ini', (req, res) => {
     const data = loadDataFromServerFile();
     if (data) {
