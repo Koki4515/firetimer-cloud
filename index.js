@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const cors = require('cors');  // Для поддержки CORS
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -9,7 +10,10 @@ const PORT = process.env.PORT || 10000;
 // Используем bodyParser для парсинга JSON в теле запроса
 app.use(bodyParser.json());
 
-// Путь к серверному файлу timer.ini
+// Разрешаем запросы с любого источника (локальная машина, Postman, другие серверы)
+app.use(cors());
+
+// Путь к серверному файлу timer.ini на облаке (Render)
 const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini');  // Путь к файлу на облаке
 
 // Функция для сохранения данных в файл timer.ini на сервере
