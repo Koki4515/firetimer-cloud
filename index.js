@@ -11,6 +11,9 @@ app.use(bodyParser.json());
 app.use(cors());  // Разрешаем CORS
 
 const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini');  // Путь к файлу на сервере
+let lastUpdateTime = 0;  // Время последнего обновления файла (в миллисекундах)
+
+const MIN_UPDATE_INTERVAL = 24 * 60 * 60 * 1000;  // 24 часа в миллисекундах
 
 // Функция для сохранения данных в файл timer.ini на сервере
 function saveDataToServerFile(data) {
@@ -20,12 +23,29 @@ function saveDataToServerFile(data) {
             return;
         }
         console.log('Данные успешно сохранены в timer.ini на сервере');
+        lastUpdateTime = Date.now();  // Обновляем время последнего обновления
     });
+}
+
+// Функция для загрузки данных из файла timer.ini
+function loadDataFromServerFile() {
+    try {
+        const data = fs.readFileSync(SERVER_FILE_PATH, 'utf8');
+        return JSON.parse(data);  // Преобразуем JSON строку в объект
+    } catch (err) {
+        console.error('Ошибка при чтении файла timer.ini:', err);
+        return null;
+    }
 }
 
 // Обработчик для загрузки данных с клиента (из файла FireTimerCloud.ini) и сохранения в серверный файл timer.ini
 app.post('/upload_ini', (req, res) => {
     const data = req.body;
+
+    // Проверяем, прошло ли менее 24 часов с последнего обновления
+    if (Date.now() - lastUpdateTime < MIN_UPDATE_INTERVAL) {
+        return res.status(400).send('Ошибка: данные могут обновляться не чаще чем раз в 24 часа.');
+    }
 
     // Логируем полученные данные
     console.log('Полученные данные для загрузки в серверный файл:', data);
@@ -38,14 +58,12 @@ app.post('/upload_ini', (req, res) => {
 
 // Обработчик для получения данных с сервера (для запроса с локальной машины)
 app.get('/download_ini', (req, res) => {
-    fs.readFile(SERVER_FILE_PATH, 'utf8', (err, data) => {
-        if (err) {
-            console.error('Ошибка чтения файла timer.ini на сервере:', err);
-            return res.status(500).send('Ошибка чтения файла timer.ini');
-        }
-
-        res.json(JSON.parse(data));
-    });
+    const data = loadDataFromServerFile();
+    if (data) {
+        res.json(data);  // Отправляем данные в ответ
+    } else {
+        res.status(500).send('Ошибка при чтении данных из файла timer.ini');
+    }
 });
 
 // Запуск сервера
