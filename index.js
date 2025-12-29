@@ -2,22 +2,24 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
-const cors = require('cors');  // Для поддержки CORS
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Используем bodyParser для парсинга JSON в теле запроса
-app.use(bodyParser.json());
+// Путь к серверному файлу timer.ini
+const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini');  // Путь к файлу на облаке
 
-// Разрешаем запросы с любого источника (локальная машина, Postman, другие серверы)
-app.use(cors());
+// Путь к локальному файлу FireTimerCloud.ini на сервере
+const CLIENT_FILE_PATH = path.join(__dirname, 'FireTimerCloud.ini');
 
-// Путь к серверному файлу timer.ini (файл будет находиться в той же папке, где и index.js)
-const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini');  
-
-// Путь к файлу FireTimerCloud.ini, который локальный файл на компьютере (там же, где и firetimer.lua)
-const CLIENT_FILE_PATH = path.join(__dirname, 'FireTimerCloud.ini');  
+// Устанавливаем права доступа к файлу FireTimerCloud.ini
+fs.chmod(CLIENT_FILE_PATH, '0666', (err) => {
+    if (err) {
+        console.error('Ошибка при установке прав доступа:', err);
+        return;
+    }
+    console.log('Права доступа к файлу FireTimerCloud.ini установлены');
+});
 
 // Функция для сохранения данных в файл timer.ini на сервере
 function saveDataToServerFile(data) {
