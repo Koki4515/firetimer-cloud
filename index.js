@@ -38,6 +38,20 @@ function loadDataFromServerFile() {
     }
 }
 
+// Функция для создания файла с дефолтными значениями
+function createDefaultFile() {
+    const defaultData = {
+        fire: {
+            nextLvl3: 0,
+            lastLvl3: 0,
+            lastNormal: 0,
+            nextNormal: 0
+        }
+    };
+
+    saveDataToServerFile(defaultData);
+}
+
 // Эндпоинт для обработки загрузки данных в файл timer.ini
 app.post('/upload_ini', (req, res) => {
     const data = req.body;
@@ -58,6 +72,12 @@ app.post('/upload_ini', (req, res) => {
 
 // Эндпоинт для получения данных из файла timer.ini
 app.get('/download_ini', (req, res) => {
+    // Проверяем, существует ли файл
+    if (!fs.existsSync(SERVER_FILE_PATH)) {
+        console.log('Файл не найден, создаём файл с дефолтными значениями.');
+        createDefaultFile();
+    }
+
     const data = loadDataFromServerFile();
     if (data) {
         res.json(data);  // Отправляем данные в ответ
