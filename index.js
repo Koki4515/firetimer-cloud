@@ -10,15 +10,15 @@ const PORT = process.env.PORT || 10000;
 app.use(bodyParser.json());
 app.use(cors());  
 
-const SERVER_FILE_PATH = path.join(__dirname, 'FireTimerCloud.ini');  
+const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini'); 
 
 function saveDataToServerFile(data) {
     fs.writeFile(SERVER_FILE_PATH, JSON.stringify(data, null, 2), 'utf8', (err) => {
         if (err) {
-            console.error('Ошибка записи в файл FireTimerCloud.ini на сервере:', err);
+            console.error('Ошибка записи в файл timer.ini на сервере:', err);
             return;
         }
-        console.log('Данные успешно сохранены в FireTimerCloud.ini на сервере');
+        console.log('Данные успешно сохранены в timer.ini на сервере');
     });
 }
 
@@ -27,7 +27,7 @@ function loadDataFromServerFile() {
         const data = fs.readFileSync(SERVER_FILE_PATH, 'utf8');
         return JSON.parse(data); 
     } catch (err) {
-        console.error('Ошибка при чтении файла FireTimerCloud.ini:', err);
+        console.error('Ошибка при чтении файла timer.ini:', err);
         return null;
     }
 }
@@ -51,7 +51,7 @@ app.post('/upload_ini', (req, res) => {
 
     saveDataToServerFile(data);
 
-    res.status(200).send('Данные успешно загружены в серверный файл FireTimerCloud.ini');
+    res.status(200).send('Данные успешно загружены в серверный файл timer.ini');
 });
 
 app.get('/download_ini', (req, res) => {
@@ -64,7 +64,7 @@ app.get('/download_ini', (req, res) => {
     if (data) {
         res.json(data); 
     } else {
-        res.status(500).send('Ошибка при чтении данных из файла FireTimerCloud.ini');
+        res.status(500).send('Ошибка при чтении данных из файла timer.ini');
     }
 });
 
