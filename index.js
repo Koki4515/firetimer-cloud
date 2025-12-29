@@ -7,11 +7,9 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Используем bodyParser для парсинга JSON в теле запроса
 app.use(bodyParser.json());
 app.use(cors());  // Разрешаем CORS
 
-// Путь к серверному файлу timer.ini
 const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini');  // Путь к файлу на сервере
 
 // Функция для сохранения данных в файл timer.ini на сервере
@@ -40,14 +38,12 @@ app.post('/upload_ini', (req, res) => {
 
 // Обработчик для получения данных с сервера (для запроса с локальной машины)
 app.get('/download_ini', (req, res) => {
-    // Читаем серверный файл timer.ini
     fs.readFile(SERVER_FILE_PATH, 'utf8', (err, data) => {
         if (err) {
             console.error('Ошибка чтения файла timer.ini на сервере:', err);
             return res.status(500).send('Ошибка чтения файла timer.ini');
         }
 
-        // Отправляем содержимое файла как JSON
         res.json(JSON.parse(data));
     });
 });
