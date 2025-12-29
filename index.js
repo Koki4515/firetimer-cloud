@@ -7,10 +7,10 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 // Используем bodyParser для парсинга JSON в теле запроса
-app.use(bodyParser.json());  // Для парсинга JSON в теле запроса
+app.use(bodyParser.json());
 
-// Путь к файлу FireTimerCloud.ini
-const CLIENT_FILE_PATH = path.join(__dirname, 'FireTimerCloud.ini');  // Файл будет находиться в той же папке, где и index.js
+// Путь к локальному файлу FireTimerCloud.ini
+const CLIENT_FILE_PATH = path.join(__dirname, 'FireTimerCloud.ini');  // Путь к файлу в той же папке, где и index.js
 
 // Функция для сохранения данных в файл FireTimerCloud.ini
 function saveDataToFile(data) {
@@ -23,7 +23,7 @@ function saveDataToFile(data) {
     });
 }
 
-// Обработчик для загрузки данных в файл
+// Обработчик для загрузки данных с клиента и сохранения их в FireTimerCloud.ini
 app.post('/upload_ini', (req, res) => {
     const data = req.body;
 
