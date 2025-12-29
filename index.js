@@ -9,40 +9,40 @@ const PORT = process.env.PORT || 10000;
 // Используем bodyParser для парсинга JSON в теле запроса
 app.use(bodyParser.json());
 
-// Путь к локальному файлу FireTimerCloud.ini
-const CLIENT_FILE_PATH = path.join(__dirname, 'FireTimerCloud.ini');  // Путь к файлу в той же папке, где и index.js
+// Путь к серверному файлу timer.ini
+const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini');  // Путь к файлу на облаке
 
-// Функция для сохранения данных в файл FireTimerCloud.ini
-function saveDataToFile(data) {
-    fs.writeFile(CLIENT_FILE_PATH, JSON.stringify(data, null, 2), 'utf8', (err) => {
+// Функция для сохранения данных в файл timer.ini на сервере
+function saveDataToServerFile(data) {
+    fs.writeFile(SERVER_FILE_PATH, JSON.stringify(data, null, 2), 'utf8', (err) => {
         if (err) {
-            console.error('Ошибка записи в файл:', err);
+            console.error('Ошибка записи в файл timer.ini на сервере:', err);
             return;
         }
-        console.log('Данные успешно сохранены в FireTimerCloud.ini');
+        console.log('Данные успешно сохранены в timer.ini на сервере');
     });
 }
 
-// Обработчик для загрузки данных с клиента и сохранения их в FireTimerCloud.ini
+// Обработчик для загрузки данных с клиента (из файла FireTimerCloud.ini) и сохранения в серверный файл timer.ini
 app.post('/upload_ini', (req, res) => {
     const data = req.body;
 
     // Логируем полученные данные
-    console.log('Полученные данные:', data);
+    console.log('Полученные данные для загрузки в серверный файл:', data);
 
-    // Сохраняем данные в файл
-    saveDataToFile(data);
+    // Сохраняем данные в файл на сервере
+    saveDataToServerFile(data);
 
-    res.status(200).send('Данные успешно загружены');
+    res.status(200).send('Данные успешно загружены в серверный файл timer.ini');
 });
 
-// Обработчик для получения данных из файла (GET запрос)
+// Обработчик для получения данных с сервера (для запроса с локальной машины)
 app.get('/download_ini', (req, res) => {
-    // Читаем файл FireTimerCloud.ini
-    fs.readFile(CLIENT_FILE_PATH, 'utf8', (err, data) => {
+    // Читаем серверный файл timer.ini
+    fs.readFile(SERVER_FILE_PATH, 'utf8', (err, data) => {
         if (err) {
-            console.error('Ошибка чтения файла:', err);
-            return res.status(500).send('Ошибка чтения файла');
+            console.error('Ошибка чтения файла timer.ini на сервере:', err);
+            return res.status(500).send('Ошибка чтения файла timer.ini');
         }
 
         // Отправляем содержимое файла как JSON
