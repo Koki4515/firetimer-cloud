@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const mkdirp = require('mkdirp');  // Для создания директорий
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -9,11 +10,31 @@ const PORT = process.env.PORT || 10000;
 // Используем bodyParser для парсинга JSON в теле запроса
 app.use(bodyParser.json());  // Для парсинга JSON в теле запроса
 
-// Путь к файлу FireTimerCloud.ini, который будет находиться на клиенте, где firetimer.lua
+// Путь к файлу FireTimerCloud.ini, который будет находиться в той же папке, где и index.js
 const CLIENT_FILE_PATH = path.join(__dirname, 'FireTimerCloud.ini');  // Убедитесь, что это путь к файлу на клиенте
 
-// Путь к файлу timer.ini, который будет храниться на сервере
-const SERVER_FILE_PATH = path.join(__dirname, 'KOKI4', 'timer.ini');  // Папка KOKI4 на сервере
+// Путь к папке KOKI4 и файлу timer.ini
+const KOKI4_FOLDER_PATH = path.join(__dirname, 'KOKI4');
+const SERVER_FILE_PATH = path.join(KOKI4_FOLDER_PATH, 'timer.ini');
+
+// Функция для создания папки KOKI4 (если она не существует)
+function createKoki4Folder() {
+    if (!fs.existsSync(KOKI4_FOLDER_PATH)) {
+        mkdirp.sync(KOKI4_FOLDER_PATH);  // Создание папки и всех промежуточных папок
+        console.log('Папка KOKI4 успешно создана');
+    }
+}
+
+// Функция для сохранения данных в файл на сервере (timer.ini)
+function saveDataToServerFile(data) {
+    fs.writeFile(SERVER_FILE_PATH, JSON.stringify(data, null, 2), 'utf8', (err) => {
+        if (err) {
+            console.error('Ошибка записи в файл:', err);
+            return;
+        }
+        console.log('Данные успешно сохранены в файл timer.ini');
+    });
+}
 
 // Обработчик для загрузки данных в файл на сервере
 app.post('/upload_ini', (req, res) => {
@@ -23,15 +44,9 @@ app.post('/upload_ini', (req, res) => {
     console.log('Полученные данные:', data);
 
     // Сохраняем данные в серверный файл timer.ini
-    fs.writeFile(SERVER_FILE_PATH, JSON.stringify(data, null, 2), 'utf8', (err) => {
-        if (err) {
-            console.error('Ошибка записи в файл:', err);
-            return res.status(500).send('Ошибка записи в файл');
-        }
+    saveDataToServerFile(data);
 
-        console.log('Данные успешно сохранены в timer.ini');
-        res.status(200).send('Данные успешно загружены');
-    });
+    res.status(200).send('Данные успешно загружены');
 });
 
 // Обработчик для получения данных из файла на сервере (GET запрос)
@@ -50,5 +65,9 @@ app.get('/download_ini', (req, res) => {
 
 // Запуск сервера
 app.listen(PORT, () => {
+    // Создаем папку KOKI4 и файл, если они не существуют
+    createKoki4Folder();
+
     console.log(`Сервер запущен на порту ${PORT}`);
+    console.log(`Доступен по URL: https://firetimer-cloud-1.onrender.com`);
 });
