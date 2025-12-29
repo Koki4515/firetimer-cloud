@@ -1,15 +1,16 @@
 {
   "name": "firetimer-cloud",
   "version": "1.0.0",
-  "description": "",
+  "description": "FireTimer Cloud Project",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.17.1",
-    "body-parser": "^1.19.0"
-  },
-  "author": "",
-  "license": "ISC"
+    "body-parser": "^1.19.0",
+    "fs": "0.0.1",
+    "path": "^0.12.7",
+    "mkdirp": "^1.0.4"
+  }
 }
