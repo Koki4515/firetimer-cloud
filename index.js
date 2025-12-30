@@ -59,7 +59,13 @@ app.post('/upload_ini', (req, res) => {
   res.status(200).send('Данные успешно загружены в серверный файл timer.ini');
 });
 
+// Исправляем маршруты: добавляем проверку для корректной работы без лишних перенаправлений
+app.get('*', (req, res) => {
+  res.status(200).send('FireTimer Cloud API работает!');
+});
+
+// Запускаем сервер
 app.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
-  console.log(`Доступен по URL: https://firetimer-cloud-1.onrender.com`);
+  console.log(`Доступен по URL: http://localhost:${PORT}`);
 });
