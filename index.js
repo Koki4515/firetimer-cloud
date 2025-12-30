@@ -12,6 +12,7 @@ app.use(cors());
 
 const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini'); 
 
+// Функция для сохранения данных в файл
 function saveDataToServerFile(data) {
     fs.writeFile(SERVER_FILE_PATH, JSON.stringify(data, null, 2), 'utf8', (err) => {
         if (err) {
@@ -22,6 +23,7 @@ function saveDataToServerFile(data) {
     });
 }
 
+// Функция для чтения данных из файла
 function loadDataFromServerFile() {
     try {
         const data = fs.readFileSync(SERVER_FILE_PATH, 'utf8');
@@ -32,32 +34,11 @@ function loadDataFromServerFile() {
     }
 }
 
-function restoreFileWithLatestData() {
-    const lastKnownData = {
-        fire: {
-            nextLvl3: 1767020648,
-            lastLvl3: 1767021848,
-            lastNormal: 1767020648,
-            nextNormal: 1767021848
-        }
-    };
-    saveDataToServerFile(lastKnownData);
-}
-
-app.post('/upload_ini', (req, res) => {
-    const data = req.body;
-
-    console.log('Полученные данные для загрузки в серверный файл:', data);
-
-    saveDataToServerFile(data);
-
-    res.status(200).send('Данные успешно загружены в серверный файл timer.ini');
-});
-
+// Эндпоинт для получения данных из файла
 app.get('/download_ini', (req, res) => {
     if (!fs.existsSync(SERVER_FILE_PATH)) {
-        console.log('Файл не найден, восстанавливаем файл с последними значениями.');
-        restoreFileWithLatestData();  
+        console.log('Файл не найден!');
+        return res.status(500).send('Файл не найден!');
     }
 
     const data = loadDataFromServerFile();
@@ -66,6 +47,17 @@ app.get('/download_ini', (req, res) => {
     } else {
         res.status(500).send('Ошибка при чтении данных из файла timer.ini');
     }
+});
+
+// Эндпоинт для загрузки данных на сервер
+app.post('/upload_ini', (req, res) => {
+    const data = req.body;
+
+    console.log('Полученные данные для загрузки в серверный файл:', data);
+
+    saveDataToServerFile(data);  // Сохраняем полученные данные в файл
+
+    res.status(200).send('Данные успешно загружены в серверный файл timer.ini');
 });
 
 app.listen(PORT, () => {
