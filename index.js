@@ -10,7 +10,8 @@ const PORT = process.env.PORT || 10000;
 app.use(bodyParser.json());
 app.use(cors());  
 
-const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini'); 
+const SERVER_FILE_PATH = path.join(__dirname, 'timer.ini');  // Путь к файлу timer.ini на сервере
+const CLOUD_FILE_PATH = path.join(__dirname, 'FireTimerCloud.ini');  // Локальная версия данных для клиента
 
 // Функция для сохранения данных в файл
 function saveDataToServerFile(data) {
@@ -34,30 +35,39 @@ function loadDataFromServerFile() {
     }
 }
 
-// Эндпоинт для получения данных из файла
+// Эндпоинт для получения данных из файла (для клиента)
 app.get('/download_ini', (req, res) => {
     if (!fs.existsSync(SERVER_FILE_PATH)) {
-        console.log('Файл не найден!');
+        console.log('Файл timer.ini не найден!');
         return res.status(500).send('Файл не найден!');
     }
 
     const data = loadDataFromServerFile();
     if (data) {
-        res.json(data); 
+        res.json(data);  // Отдаем данные скрипту
     } else {
         res.status(500).send('Ошибка при чтении данных из файла timer.ini');
     }
 });
 
-// Эндпоинт для загрузки данных на сервер
+// Эндпоинт для загрузки данных на сервер (скрипт отправляет данные)
 app.post('/upload_ini', (req, res) => {
     const data = req.body;
 
     console.log('Полученные данные для загрузки в серверный файл:', data);
 
-    saveDataToServerFile(data);  // Сохраняем полученные данные в файл
+    // Сохраняем данные в timer.ini
+    saveDataToServerFile(data);
 
-    res.status(200).send('Данные успешно загружены в серверный файл timer.ini');
+    // Также сохраняем данные в FireTimerCloud.ini для клиента
+    fs.writeFile(CLOUD_FILE_PATH, JSON.stringify(data, null, 2), 'utf8', (err) => {
+        if (err) {
+            console.error('Ошибка записи в файл FireTimerCloud.ini на сервере:', err);
+            return res.status(500).send('Ошибка записи в файл FireTimerCloud.ini');
+        }
+        console.log('Данные успешно сохранены в FireTimerCloud.ini на сервере');
+        res.status(200).send('Данные успешно загружены в серверный файл timer.ini и FireTimerCloud.ini');
+    });
 });
 
 app.listen(PORT, () => {
